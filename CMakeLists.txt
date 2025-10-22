@@ -98,3 +98,14 @@ if (ANDROID)
 endif ()
 
 target_link_libraries(${TARGET} PRIVATE redis++::redis++_static)
+
+# Link system libraries on Linux
+if (UNIX AND NOT APPLE AND NOT ANDROID)
+    # libuuid provides uuid/uuid.h and uuid_* symbols (uuid-dev on Debian/Ubuntu)
+    find_library(UUID_LIB uuid)
+    if (UUID_LIB)
+        target_link_libraries(${TARGET} PRIVATE ${UUID_LIB})
+    else ()
+        target_link_libraries(${TARGET} PRIVATE uuid)
+    endif ()
+endif ()
