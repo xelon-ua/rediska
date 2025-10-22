@@ -1,3 +1,43 @@
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# CMake build directories
 /cmake-build-release/
 /cmake-build-release-linux/
-.idea
+/cmake-build-debug/
+/build/
+/build32/
+/build64/
+/build-windows/
+CMakeUserPresets.json
+
+# Build artifacts
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+*.exe
+
+# Package directory
+/package/
+RedisClient.zip
+
+# Conan
+conaninfo.txt
+conanbuildinfo.*
+graph_info.json
+
+# OS specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.log
+*.bak
