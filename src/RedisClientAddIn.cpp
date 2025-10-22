@@ -31,19 +31,22 @@
 
 std::shared_ptr<sw::redis::Redis> redisInstance;
 
-std::string RedisClientAddIn::extensionName() {
+std::string RedisClientAddIn::extensionName()
+{
     return "RedisClient";
 }
 
-RedisClientAddIn::RedisClientAddIn() {
-
-    AddProperty(L"Version", L"ВерсияКомпоненты", [&]() {
+RedisClientAddIn::RedisClientAddIn()
+{
+    AddProperty(L"Version", L"ВерсияКомпоненты", [&]()
+    {
         auto s = std::string(Version);
         return std::make_shared<variant_t>(std::move(s));
     });
 
     AddMethod(L"Connect", L"Подключиться", this, &RedisClientAddIn::initRedisClient);
     AddMethod(L"GET", L"GET", this, &RedisClientAddIn::get);
+    AddMethod(L"MGET", L"MGET", this, &RedisClientAddIn::mget, {{1, ","}});
     AddMethod(L"SET", L"SET", this, &RedisClientAddIn::set, {{2, 0}});
     AddMethod(L"HGET", L"HGET", this, &RedisClientAddIn::hGet);
     AddMethod(L"HSET", L"HSET", this, &RedisClientAddIn::hSet);
@@ -52,31 +55,35 @@ RedisClientAddIn::RedisClientAddIn() {
     AddMethod(L"FLUSHALL", L"FLUSHALL", this, &RedisClientAddIn::flushAll);
     AddMethod(L"LPUSH", L"LPUSH", this, &RedisClientAddIn::lpush);
     AddMethod(L"LRANGE", L"LRANGE", this, &RedisClientAddIn::lrange, {{1, 0}, {2, -1}});
-
 }
 
-void RedisClientAddIn::initRedisClient(const variant_t &uri) {
+void RedisClientAddIn::initRedisClient(const variant_t& uri)
+{
     redisInstance = std::make_shared<sw::redis::Redis>(std::get<std::string>(uri));
 }
 
-variant_t RedisClientAddIn::set(const variant_t &key, const variant_t &val, const variant_t &ttm) {
+variant_t RedisClientAddIn::set(const variant_t& key, const variant_t& val, const variant_t& ttm)
+{
     return redisInstance->set(
-            std::get<std::string>(key),
-            std::get<std::string>(val),
-            std::chrono::seconds(std::get<int32_t>(ttm))
+        std::get<std::string>(key),
+        std::get<std::string>(val),
+        std::chrono::seconds(std::get<int32_t>(ttm))
     );
 }
 
-variant_t RedisClientAddIn::get(const variant_t &a) {
+variant_t RedisClientAddIn::get(const variant_t& a)
+{
     auto value = redisInstance->get(std::get<std::string>(a));
 
-    if (!value) {
+    if (!value)
+    {
         return UNDEFINED;
     }
     return *value;
 }
 
-variant_t RedisClientAddIn::hSet(const variant_t &key, const variant_t &field, const variant_t &value) {
+variant_t RedisClientAddIn::hSet(const variant_t& key, const variant_t& field, const variant_t& value)
+{
     return redisInstance->hset(
         std::get<std::string>(key),
         std::get<std::string>(field),
@@ -84,46 +91,78 @@ variant_t RedisClientAddIn::hSet(const variant_t &key, const variant_t &field, c
     );
 }
 
-variant_t RedisClientAddIn::hGet(const variant_t &key, const variant_t &field) {
+variant_t RedisClientAddIn::hGet(const variant_t& key, const variant_t& field)
+{
     auto result = redisInstance->hget(std::get<std::string>(key), std::get<std::string>(field));
 
-    if (!result) {
+    if (!result)
+    {
         return UNDEFINED;
     }
 
     return *result;
 }
 
-variant_t RedisClientAddIn::del(const variant_t &key) {
-    return (int32_t) redisInstance->del(std::get<std::string>(key));
-
+variant_t RedisClientAddIn::del(const variant_t& key)
+{
+    return (int32_t)redisInstance->del(std::get<std::string>(key));
 }
 
-variant_t RedisClientAddIn::exists(const variant_t &key) {
-    return (int32_t) redisInstance->exists(std::get<std::string>(key));
+variant_t RedisClientAddIn::exists(const variant_t& key)
+{
+    return (int32_t)redisInstance->exists(std::get<std::string>(key));
 }
 
-void RedisClientAddIn::flushAll() {
+void RedisClientAddIn::flushAll()
+{
     redisInstance->flushall();
 }
 
-variant_t RedisClientAddIn::lpush(const variant_t &key, const variant_t &values, const variant_t &delimiter) {
+variant_t RedisClientAddIn::lpush(const variant_t& key, const variant_t& values, const variant_t& delimiter)
+{
     auto vecString = StringUtils::split(std::get<std::string>(values), std::get<std::string>(delimiter));
-    return (int32_t) redisInstance->rpush(std::get<std::string>(key), vecString.begin(), vecString.end());
+    return (int32_t)redisInstance->rpush(std::get<std::string>(key), vecString.begin(), vecString.end());
 }
 
-variant_t RedisClientAddIn::lrange(const variant_t &key, const variant_t &start, const variant_t &stop) {
+variant_t RedisClientAddIn::lrange(const variant_t& key, const variant_t& start, const variant_t& stop)
+{
     std::vector<std::string> vec;
     vec.clear();
     redisInstance->lrange(
-            std::get<std::string>(key),
-            std::get<int32_t>(start),
-            std::get<int32_t>(stop),
-            std::back_inserter(vec)
+        std::get<std::string>(key),
+        std::get<int32_t>(start),
+        std::get<int32_t>(stop),
+        std::back_inserter(vec)
     );
 
     return StringUtils::join(vec);
 }
 
+variant_t RedisClientAddIn::mget(const variant_t& keys, const variant_t& delimiter)
+{
+    // Розділяємо ключі за роздільником
+    auto vecKeys = StringUtils::split(std::get<std::string>(keys), std::get<std::string>(delimiter));
 
+    // Отримуємо значення для всіх ключів
+    std::vector<sw::redis::OptionalString> results;
+    results.clear();
+    redisInstance->mget(vecKeys.begin(), vecKeys.end(), std::back_inserter(results));
 
+    // Формуємо результат: для nil ключів повертаємо порожній рядок
+    std::vector<std::string> values;
+    for (const auto& opt_val : results)
+    {
+        if (opt_val)
+        {
+            values.push_back(*opt_val);
+        }
+        else
+        {
+            // Для неіснуючих ключів додаємо маркер
+            values.push_back("");
+        }
+    }
+
+    // Повертаємо результат як рядок з роздільниками
+    return StringUtils::join(values);
+}

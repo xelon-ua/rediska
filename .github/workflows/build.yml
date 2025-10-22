@@ -1,0 +1,194 @@
+name: Build RedisClient Native AddIn
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  build-windows:
+    name: Build Windows x86_64 (DLL)
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Conan
+        run: |
+          python -m pip install --upgrade pip
+          pip install conan
+
+      - name: Setup Conan profile
+        run: conan profile detect --force
+
+      - name: Build
+        run: |
+          .\build_and_pack.bat
+        shell: cmd
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RedisClient-Windows-x86_64
+          path: RedisClient.zip
+          retention-days: 30
+
+      - name: Upload DLL only
+        uses: actions/upload-artifact@v4
+        with:
+          name: RedisClientAddIn-dll
+          path: package/RedisClientAddIn.dll
+          retention-days: 30
+
+  build-linux:
+    name: Build Linux x86_64 (SO)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential python3 python3-pip
+
+      - name: Install Conan
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install conan
+
+      - name: Setup Conan profile
+        run: conan profile detect --force
+
+      - name: Build
+        run: |
+          chmod +x build_and_pack.sh
+          ./build_and_pack.sh
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RedisClient-Linux-x86_64
+          path: RedisClient.zip
+          retention-days: 30
+
+      - name: Upload SO only
+        uses: actions/upload-artifact@v4
+        with:
+          name: libRedisClientAddIn-so
+          path: package/libRedisClientAddIn.so
+          retention-days: 30
+
+  build-macos:
+    name: Build macOS ARM64 (DYLIB)
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Conan
+        run: |
+          python -m pip install --upgrade pip
+          pip install conan
+
+      - name: Setup Conan profile
+        run: conan profile detect --force
+
+      - name: Build
+        run: |
+          chmod +x build_and_pack.sh
+          ./build_and_pack.sh
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RedisClient-macOS-ARM64
+          path: RedisClient.zip
+          retention-days: 30
+
+      - name: Upload DYLIB only
+        uses: actions/upload-artifact@v4
+        with:
+          name: libRedisClientAddIn-dylib
+          path: package/libRedisClientAddIn.dylib
+          retention-days: 30
+
+  create-release-package:
+    name: Create Multi-Platform Package
+    needs: [ build-windows, build-linux, build-macos ]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Windows DLL
+        uses: actions/download-artifact@v4
+        with:
+          name: RedisClientAddIn-dll
+          path: package-multi
+
+      - name: Download Linux SO
+        uses: actions/download-artifact@v4
+        with:
+          name: libRedisClientAddIn-so
+          path: package-multi
+
+      - name: Download macOS DYLIB
+        uses: actions/download-artifact@v4
+        with:
+          name: libRedisClientAddIn-dylib
+          path: package-multi
+
+      - name: Create manifest.xml
+        run: |
+          cat > package-multi/manifest.xml << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <bundle xmlns="http://v8.1c.ru/8.2/addin/bundle">
+              <component os="Windows" arch="i386" path="RedisClientAddIn.dll"/>
+              <component os="Windows" arch="x86_64" path="RedisClientAddIn.dll"/>
+              <component os="Linux" arch="i386" path="libRedisClientAddIn.so"/>
+              <component os="Linux" arch="x86_64" path="libRedisClientAddIn.so"/>
+              <component os="macOS" arch="x86_64" path="libRedisClientAddIn.dylib"/>
+              <component os="macOS" arch="arm64" path="libRedisClientAddIn.dylib"/>
+          </bundle>
+          EOF
+
+      - name: Create multi-platform ZIP
+        run: |
+          cd package-multi
+          zip -r ../RedisClient-MultiPlatform.zip *
+
+      - name: Upload multi-platform package
+        uses: actions/upload-artifact@v4
+        with:
+          name: RedisClient-MultiPlatform
+          path: RedisClient-MultiPlatform.zip
+          retention-days: 90
+
+      - name: Create Release (if tagged)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            RedisClient-MultiPlatform.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

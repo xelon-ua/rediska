@@ -24,35 +24,37 @@
 //#include <sw/redis++/redis++.h>
 #include "Component.h"
 
-class RedisClientAddIn final : public Component {
+class RedisClientAddIn final : public Component
+{
 public:
-    const char *Version = u8"1.0.0.1";
+    const char* Version = u8"1.0.0.1";
 
     RedisClientAddIn();
 
 private:
     std::string extensionName() override;
 
-    void initRedisClient(const variant_t &a);
+    void initRedisClient(const variant_t& a);
 
-    variant_t get(const variant_t &a);
+    variant_t get(const variant_t& a);
 
-    variant_t set(const variant_t &key, const variant_t &val, const variant_t &ttm);
+    variant_t mget(const variant_t& keys, const variant_t& delimiter);
 
-    variant_t hSet(const variant_t &key, const variant_t &field, const variant_t &value);
+    variant_t set(const variant_t& key, const variant_t& val, const variant_t& ttm);
 
-    variant_t hGet(const variant_t &key, const variant_t &field);
+    variant_t hSet(const variant_t& key, const variant_t& field, const variant_t& value);
 
-    variant_t del(const variant_t &key);
+    variant_t hGet(const variant_t& key, const variant_t& field);
 
-    variant_t exists(const variant_t &key);
+    variant_t del(const variant_t& key);
+
+    variant_t exists(const variant_t& key);
 
     void flushAll();
 
-    variant_t lpush(const variant_t &key, const variant_t &values, const variant_t &delimiter);
+    variant_t lpush(const variant_t& key, const variant_t& values, const variant_t& delimiter);
 
-    variant_t lrange(const variant_t &key, const variant_t &start, const variant_t &stop);
-
+    variant_t lrange(const variant_t& key, const variant_t& start, const variant_t& stop);
 };
 
 #endif //SAMPLEADDIN_H
