@@ -13,6 +13,18 @@ if (EXISTS ${CMAKE_BINARY_DIR}/conan_toolchain.cmake)
     include(${CMAKE_BINARY_DIR}/conan_toolchain.cmake)
 endif()
 
+# Include Conan-generated dependencies
+if (EXISTS ${CMAKE_BINARY_DIR}/CMakeDeps/CMakeLists.txt)
+    list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
+endif ()
+
+# Add build directory to CMAKE_PREFIX_PATH and CMAKE_MODULE_PATH
+list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
+
+# Find dependencies installed by Conan
+find_package(redis++ REQUIRED)
+
 set(CMAKE_CXX_STANDARD 17)
 set(TARGET RedisClientAddIn)
 
@@ -85,6 +97,4 @@ if (ANDROID)
     endif ()
 endif ()
 
-# Find and link Conan dependencies
-find_package(redis-plus-plus REQUIRED CONFIG)
-target_link_libraries(${TARGET} PRIVATE redis-plus-plus::redis-plus-plus)
+target_link_libraries(${TARGET} PRIVATE redis++::redis++_static)
