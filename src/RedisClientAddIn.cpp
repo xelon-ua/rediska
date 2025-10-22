@@ -84,11 +84,12 @@ variant_t RedisClientAddIn::get(const variant_t& a)
 
 variant_t RedisClientAddIn::hSet(const variant_t& key, const variant_t& field, const variant_t& value)
 {
-    return redisInstance->hset(
+    auto updated_fields_count = redisInstance->hset(
         std::get<std::string>(key),
         std::get<std::string>(field),
         std::get<std::string>(value)
     );
+    return static_cast<int32_t>(updated_fields_count);
 }
 
 variant_t RedisClientAddIn::hGet(const variant_t& key, const variant_t& field)
