@@ -22,7 +22,7 @@
 #include <chrono>
 #include <stdexcept>
 #include <thread>
-#include <sw/redis++/redis.h>
+#include <sw/redis++/redis++.h>
 #include <regex>
 #include <numeric>
 
@@ -178,21 +178,14 @@ variant_t RedisClientAddIn::mget(const variant_t& keys, const variant_t& delimit
     results.clear();
     redisInstance->mget(vecKeys.begin(), vecKeys.end(), std::back_inserter(results));
 
-    // Form the result: for nil keys return an empty string
+    // Build array of strings for 1C; for missing keys return empty string
     std::vector<std::string> values;
+    values.reserve(results.size());
     for (const auto& opt_val : results)
     {
-        if (opt_val)
-        {
-            values.push_back(*opt_val);
-        }
-        else
-        {
-            // For non-existent keys, add a marker
-            values.push_back("");
-        }
+        values.push_back(opt_val ? *opt_val : std::string());
     }
 
-    // Return the result as a string with delimiters
-    return StringUtils::join(values);
+    // Return as array (marshalled to 1C Array)
+    return values;
 }

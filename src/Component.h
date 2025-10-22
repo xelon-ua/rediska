@@ -48,7 +48,8 @@ typedef std::variant<
         bool,
         std::string,
         std::tm,
-        std::vector<char>
+        std::vector<char>,
+        std::vector<std::string>
 > variant_t;
 
 class Component : public IComponentBase {
@@ -142,6 +143,8 @@ private:
     void storeVariable(const std::u16string &src, WCHAR_T **dst);
 
     void storeVariable(const std::vector<char> &src, tVariant &dst);
+
+    void storeVariable(const std::vector<std::string>& src, tVariant& dst);
 
     void storeVariable(const variant_t &src, tVariant &dst);
 
