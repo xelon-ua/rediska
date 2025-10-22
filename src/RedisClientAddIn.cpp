@@ -57,13 +57,33 @@ RedisClientAddIn::RedisClientAddIn()
     AddMethod(L"LRANGE", L"LRANGE", this, &RedisClientAddIn::lrange, {{1, 0}, {2, -1}});
 }
 
+void RedisClientAddIn::ensureConnected()
+{
+    if (!redisInstance)
+    {
+        throw std::runtime_error("Redis client is not initialized. Call initRedisClient(uri) first.");
+    }
+}
+
 void RedisClientAddIn::initRedisClient(const variant_t& uri)
 {
-    redisInstance = std::make_shared<sw::redis::Redis>(std::get<std::string>(uri));
+    try
+    {
+        redisInstance = std::make_shared<sw::redis::Redis>(std::get<std::string>(uri));
+        // Validate connection early to fail fast with a clear message
+        auto pong = redisInstance->ping();
+        (void)pong;
+    }
+    catch (const std::exception& e)
+    {
+        redisInstance.reset();
+        throw std::runtime_error(std::string("Failed to connect to Redis: ") + e.what());
+    }
 }
 
 variant_t RedisClientAddIn::set(const variant_t& key, const variant_t& val, const variant_t& ttm)
 {
+    ensureConnected();
     return redisInstance->set(
         std::get<std::string>(key),
         std::get<std::string>(val),
@@ -73,6 +93,7 @@ variant_t RedisClientAddIn::set(const variant_t& key, const variant_t& val, cons
 
 variant_t RedisClientAddIn::get(const variant_t& a)
 {
+    ensureConnected();
     auto value = redisInstance->get(std::get<std::string>(a));
 
     if (!value)
@@ -84,6 +105,7 @@ variant_t RedisClientAddIn::get(const variant_t& a)
 
 variant_t RedisClientAddIn::hSet(const variant_t& key, const variant_t& field, const variant_t& value)
 {
+    ensureConnected();
     auto updated_fields_count = redisInstance->hset(
         std::get<std::string>(key),
         std::get<std::string>(field),
@@ -94,6 +116,7 @@ variant_t RedisClientAddIn::hSet(const variant_t& key, const variant_t& field, c
 
 variant_t RedisClientAddIn::hGet(const variant_t& key, const variant_t& field)
 {
+    ensureConnected();
     auto result = redisInstance->hget(std::get<std::string>(key), std::get<std::string>(field));
 
     if (!result)
@@ -106,27 +129,32 @@ variant_t RedisClientAddIn::hGet(const variant_t& key, const variant_t& field)
 
 variant_t RedisClientAddIn::del(const variant_t& key)
 {
+    ensureConnected();
     return (int32_t)redisInstance->del(std::get<std::string>(key));
 }
 
 variant_t RedisClientAddIn::exists(const variant_t& key)
 {
+    ensureConnected();
     return (int32_t)redisInstance->exists(std::get<std::string>(key));
 }
 
 void RedisClientAddIn::flushAll()
 {
+    ensureConnected();
     redisInstance->flushall();
 }
 
 variant_t RedisClientAddIn::lpush(const variant_t& key, const variant_t& values, const variant_t& delimiter)
 {
+    ensureConnected();
     auto vecString = StringUtils::split(std::get<std::string>(values), std::get<std::string>(delimiter));
     return (int32_t)redisInstance->rpush(std::get<std::string>(key), vecString.begin(), vecString.end());
 }
 
 variant_t RedisClientAddIn::lrange(const variant_t& key, const variant_t& start, const variant_t& stop)
 {
+    ensureConnected();
     std::vector<std::string> vec;
     vec.clear();
     redisInstance->lrange(
@@ -141,15 +169,16 @@ variant_t RedisClientAddIn::lrange(const variant_t& key, const variant_t& start,
 
 variant_t RedisClientAddIn::mget(const variant_t& keys, const variant_t& delimiter)
 {
-    // Розділяємо ключі за роздільником
+    ensureConnected();
+    // Split keys by delimiter
     auto vecKeys = StringUtils::split(std::get<std::string>(keys), std::get<std::string>(delimiter));
 
-    // Отримуємо значення для всіх ключів
+    // Get values for all keys
     std::vector<sw::redis::OptionalString> results;
     results.clear();
     redisInstance->mget(vecKeys.begin(), vecKeys.end(), std::back_inserter(results));
 
-    // Формуємо результат: для nil ключів повертаємо порожній рядок
+    // Form the result: for nil keys return an empty string
     std::vector<std::string> values;
     for (const auto& opt_val : results)
     {
@@ -159,11 +188,11 @@ variant_t RedisClientAddIn::mget(const variant_t& keys, const variant_t& delimit
         }
         else
         {
-            // Для неіснуючих ключів додаємо маркер
+            // For non-existent keys, add a marker
             values.push_back("");
         }
     }
 
-    // Повертаємо результат як рядок з роздільниками
+    // Return the result as a string with delimiters
     return StringUtils::join(values);
 }

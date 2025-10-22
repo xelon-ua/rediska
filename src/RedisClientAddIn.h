@@ -34,6 +34,8 @@ public:
 private:
     std::string extensionName() override;
 
+    void ensureConnected();
+
     void initRedisClient(const variant_t& a);
 
     variant_t get(const variant_t& a);
