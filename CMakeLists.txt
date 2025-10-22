@@ -1,4 +1,11 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.15)
+set(CMAKE_POLICY_DEFAULT_CMP0091 NEW)
+
+# Set CMake policy CMP0091 to NEW for MSVC runtime library selection
+if (POLICY CMP0091)
+    cmake_policy(SET CMP0091 NEW)
+endif ()
+
 project(RedisClient)
 
 # Conan 2.x support

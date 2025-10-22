@@ -50,17 +50,13 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-REM Generate CMake project
+REM Generate CMake project - use default generator (will pick latest VS version)
 echo.
 echo === Generating CMake project ===
-cmake .. -G "Visual Studio 16 2019" -A x64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
+cmake .. -A x64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_POLICY_DEFAULT_CMP0091=NEW
 if %errorlevel% neq 0 (
-    echo Error: CMake generation failed. Trying with default generator...
-    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
-    if %errorlevel% neq 0 (
-        echo Error: CMake generation failed
-        exit /b 1
-    )
+    echo Error: CMake generation failed
+    exit /b 1
 )
 
 REM Build the project
