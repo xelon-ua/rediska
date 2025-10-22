@@ -31,6 +31,11 @@ RedisClient.zip
 conaninfo.txt
 conanbuildinfo.*
 graph_info.json
+conan_toolchain.cmake
+CMakePresets.json
+conan.lock
+CMakeDeps/
+**/CMakeUserPresets.json
 
 # OS specific
 .DS_Store

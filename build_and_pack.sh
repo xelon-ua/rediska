@@ -35,7 +35,7 @@ cd "${BUILD_DIR}"
 # Install dependencies via Conan
 echo ""
 echo "=== Installing dependencies via Conan ==="
-conan install .. --build=missing -s arch=x86_64 -s build_type=Release -of .
+conan install .. --build=missing -s arch=x86_64 -s build_type=Release -s compiler.cppstd=17 -of .
 
 # Generate CMake project
 echo ""
