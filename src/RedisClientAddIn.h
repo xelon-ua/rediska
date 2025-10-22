@@ -57,6 +57,8 @@ private:
     variant_t lpush(const variant_t& key, const variant_t& values, const variant_t& delimiter);
 
     variant_t lrange(const variant_t& key, const variant_t& start, const variant_t& stop);
+
+    variant_t test();
 };
 
 #endif //SAMPLEADDIN_H

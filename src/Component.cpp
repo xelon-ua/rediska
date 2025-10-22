@@ -21,7 +21,6 @@
 #include <codecvt>
 #include <cwctype>
 #include <locale>
-
 #include "Component.h"
 
 #ifdef _WINDOWS

@@ -55,6 +55,7 @@ RedisClientAddIn::RedisClientAddIn()
     AddMethod(L"FLUSHALL", L"FLUSHALL", this, &RedisClientAddIn::flushAll);
     AddMethod(L"LPUSH", L"LPUSH", this, &RedisClientAddIn::lpush);
     AddMethod(L"LRANGE", L"LRANGE", this, &RedisClientAddIn::lrange, {{1, 0}, {2, -1}});
+    AddMethod(L"TEST", L"TEST", this, &RedisClientAddIn::test);
 }
 
 void RedisClientAddIn::ensureConnected()
@@ -170,6 +171,7 @@ variant_t RedisClientAddIn::lrange(const variant_t& key, const variant_t& start,
 variant_t RedisClientAddIn::mget(const variant_t& keys, const variant_t& delimiter)
 {
     ensureConnected();
+
     // Split keys by delimiter
     auto vecKeys = StringUtils::split(std::get<std::string>(keys), std::get<std::string>(delimiter));
 
@@ -188,4 +190,11 @@ variant_t RedisClientAddIn::mget(const variant_t& keys, const variant_t& delimit
 
     // Return as array (marshalled to 1C Array)
     return values;
+}
+
+variant_t RedisClientAddIn::test()
+{
+    ensureConnected();
+    std::vector<std::string> testValues = {"value1", "value2", "value3"};
+    return testValues;
 }
