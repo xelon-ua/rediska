@@ -61,7 +61,7 @@ void RedisClientAddIn::ensureConnected()
 {
     if (!redisInstance)
     {
-        throw std::runtime_error("Redis client is not initialized. Call initRedisClient(uri) first.");
+        throw std::runtime_error("Redis client is not initialized. Call Connect(uri) first.");
     }
 }
 

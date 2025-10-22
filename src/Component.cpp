@@ -279,6 +279,7 @@ bool Component::CallAsFunc(const long method_num, tVariant* ret_value, tVariant*
     {
         auto args = parseParams(params, array_size);
         variant_t result = methods_meta[method_num].call(args);
+        tVarInit(ret_value);
         storeVariable(result, *ret_value);
 #ifdef OUT_PARAMS
         storeParams(args, params);
@@ -408,6 +409,18 @@ void Component::storeVariable(const variant_t& src, tVariant& dst)
         memory_manager->FreeMemory(reinterpret_cast<void**>(&dst.pstrVal));
     }
 
+    if ((dst.vt & VTYPE_ARRAY) && dst.pvarVal != nullptr)
+    {
+        for (uint32_t i = 0; i < dst.cbElements; ++i)
+        {
+            if (dst.pvarVal[i].vt == VTYPE_PWSTR && dst.pvarVal[i].pwstrVal != nullptr)
+            {
+                memory_manager->FreeMemory(reinterpret_cast<void**>(&dst.pvarVal[i].pwstrVal));
+            }
+        }
+        memory_manager->FreeMemory(reinterpret_cast<void**>(&dst.pvarVal));
+    }
+
     std::visit(overloaded{
                    [&](std::monostate) { dst.vt = VTYPE_EMPTY; },
                    [&](const int32_t& v)
@@ -479,8 +492,8 @@ void Component::storeVariable(const std::vector<char>& src, tVariant& dst)
 void Component::storeVariable(const std::vector<std::string>& src, tVariant& dst)
 {
     // Represent as 1C array of variants
-    dst.cbElements = static_cast<uint32_t>(src.size());
     dst.vt = static_cast<TYPEVAR>(VTYPE_ARRAY | VTYPE_VARIANT);
+    dst.cbElements = static_cast<uint32_t>(src.size());
 
     if (src.empty())
     {
@@ -494,6 +507,7 @@ void Component::storeVariable(const std::vector<std::string>& src, tVariant& dst
         throw std::bad_alloc();
     }
 
+    // Initialize and fill each element
     for (size_t i = 0; i < src.size(); ++i)
     {
         tVarInit(&dst.pvarVal[i]);
