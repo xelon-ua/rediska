@@ -56,7 +56,6 @@ RedisClientAddIn::RedisClientAddIn()
     AddMethod(L"FLUSHALL", L"FLUSHALL", this, &RedisClientAddIn::flushAll);
     AddMethod(L"LPUSH", L"LPUSH", this, &RedisClientAddIn::lpush);
     AddMethod(L"LRANGE", L"LRANGE", this, &RedisClientAddIn::lrange, {{1, 0}, {2, -1}});
-    AddMethod(L"TestArray", L"ТестМассив", this, &RedisClientAddIn::test);
 }
 
 void RedisClientAddIn::ensureConnected()
@@ -192,10 +191,3 @@ variant_t RedisClientAddIn::mget(const variant_t& keys, const variant_t& delimit
     return values.dump();
 }
 
-variant_t RedisClientAddIn::test()
-{
-    ensureConnected();
-    std::vector<std::string> testValues = {"value1", "value2", "value3"};
-    nlohmann::json jsonValues = testValues;
-    return jsonValues.dump();
-}
