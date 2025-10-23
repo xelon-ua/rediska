@@ -491,7 +491,7 @@ void Component::storeVariable(const std::vector<char>& src, tVariant& dst)
 void Component::storeVariable(const std::vector<std::string>& src, tVariant& dst)
 {
     // Represent as 1C array of variants
-    dst.vt = static_cast<TYPEVAR>(VTYPE_ARRAY | VTYPE_VARIANT);
+    dst.vt = static_cast<TYPEVAR>(VTYPE_ARRAY | VTYPE_PSTR);
     dst.cbElements = static_cast<uint32_t>(src.size());
 
     if (src.empty())
