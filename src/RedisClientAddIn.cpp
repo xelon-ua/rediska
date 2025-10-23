@@ -25,6 +25,7 @@
 #include <sw/redis++/redis++.h>
 #include <regex>
 #include <numeric>
+#include <nlohmann/json.hpp>
 
 #include "RedisClientAddIn.h"
 #include "StringUtils.h"
@@ -55,7 +56,7 @@ RedisClientAddIn::RedisClientAddIn()
     AddMethod(L"FLUSHALL", L"FLUSHALL", this, &RedisClientAddIn::flushAll);
     AddMethod(L"LPUSH", L"LPUSH", this, &RedisClientAddIn::lpush);
     AddMethod(L"LRANGE", L"LRANGE", this, &RedisClientAddIn::lrange, {{1, 0}, {2, -1}});
-    AddMethod(L"TEST", L"TEST", this, &RedisClientAddIn::test);
+    AddMethod(L"TestArray", L"ТестМассив", this, &RedisClientAddIn::test);
 }
 
 void RedisClientAddIn::ensureConnected()
@@ -180,21 +181,21 @@ variant_t RedisClientAddIn::mget(const variant_t& keys, const variant_t& delimit
     results.clear();
     redisInstance->mget(vecKeys.begin(), vecKeys.end(), std::back_inserter(results));
 
-    // Build array of strings for 1C; for missing keys return empty string
-    std::vector<std::string> values;
-    values.reserve(results.size());
+    // Build JSON for 1C; for missing keys return empty string
+    nlohmann::json values;
     for (const auto& opt_val : results)
     {
-        values.push_back(opt_val ? *opt_val : std::string());
+        values.push_back(opt_val ? *opt_val : "");
     }
 
-    // Return as array (marshalled to 1C Array)
-    return values;
+    // Return as JSON string
+    return values.dump();
 }
 
 variant_t RedisClientAddIn::test()
 {
     ensureConnected();
     std::vector<std::string> testValues = {"value1", "value2", "value3"};
-    return testValues;
+    nlohmann::json jsonValues = testValues;
+    return jsonValues.dump();
 }

@@ -21,6 +21,7 @@
 #include <codecvt>
 #include <cwctype>
 #include <locale>
+#include <nlohmann/json.hpp>
 #include "Component.h"
 
 #ifdef _WINDOWS
@@ -408,18 +409,6 @@ void Component::storeVariable(const variant_t& src, tVariant& dst)
         memory_manager->FreeMemory(reinterpret_cast<void**>(&dst.pstrVal));
     }
 
-    if ((dst.vt & VTYPE_ARRAY) && dst.pvarVal != nullptr)
-    {
-        for (uint32_t i = 0; i < dst.cbElements; ++i)
-        {
-            if (dst.pvarVal[i].vt == VTYPE_PWSTR && dst.pvarVal[i].pwstrVal != nullptr)
-            {
-                memory_manager->FreeMemory(reinterpret_cast<void**>(&dst.pvarVal[i].pwstrVal));
-            }
-        }
-        memory_manager->FreeMemory(reinterpret_cast<void**>(&dst.pvarVal));
-    }
-
     std::visit(overloaded{
                    [&](std::monostate) { dst.vt = VTYPE_EMPTY; },
                    [&](const int32_t& v)
@@ -444,7 +433,11 @@ void Component::storeVariable(const variant_t& src, tVariant& dst)
                    },
                    [&](const std::string& v) { storeVariable(v, dst); },
                    [&](const std::vector<char>& v) { storeVariable(v, dst); },
-                   [&](const std::vector<std::string>& v) { storeVariable(v, dst); }
+                   [&](const std::vector<std::string>& v)
+                   {
+                       nlohmann::json json = v;
+                       storeVariable(json.dump(), dst);
+                   }
                }, src);
 }
 
@@ -486,32 +479,6 @@ void Component::storeVariable(const std::vector<char>& src, tVariant& dst)
     };
 
     memcpy(dst.pstrVal, src.data(), src.size());
-}
-
-void Component::storeVariable(const std::vector<std::string>& src, tVariant& dst)
-{
-    // Represent as 1C array of variants
-    dst.vt = static_cast<TYPEVAR>(VTYPE_ARRAY | VTYPE_PSTR);
-    dst.cbElements = static_cast<uint32_t>(src.size());
-
-    if (src.empty())
-    {
-        dst.pvarVal = nullptr;
-        return;
-    }
-
-    const size_t bytes_required = sizeof(tVariant) * src.size();
-    if (!memory_manager || !memory_manager->AllocMemory(reinterpret_cast<void**>(&dst.pvarVal), bytes_required))
-    {
-        throw std::bad_alloc();
-    }
-
-    // Initialize and fill each element
-    for (size_t i = 0; i < src.size(); ++i)
-    {
-        tVarInit(&dst.pvarVal[i]);
-        storeVariable(src[i], dst.pvarVal[i]);
-    }
 }
 
 std::vector<variant_t> Component::parseParams(tVariant* params, long array_size)

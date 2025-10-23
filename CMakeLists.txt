@@ -24,6 +24,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
 
 # Find dependencies installed by Conan
 find_package(redis++ REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 set(TARGET RedisClientAddIn)
@@ -98,6 +99,7 @@ if (ANDROID)
 endif ()
 
 target_link_libraries(${TARGET} PRIVATE redis++::redis++_static)
+target_link_libraries(${TARGET} PRIVATE nlohmann_json::nlohmann_json)
 
 # Link system libraries on Linux
 if (UNIX AND NOT APPLE AND NOT ANDROID)

@@ -144,8 +144,6 @@ private:
 
     void storeVariable(const std::vector<char> &src, tVariant &dst);
 
-    void storeVariable(const std::vector<std::string>& src, tVariant& dst);
-
     void storeVariable(const variant_t &src, tVariant &dst);
 
     static std::vector<variant_t> parseParams(tVariant *params, long array_size);
