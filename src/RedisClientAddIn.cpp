@@ -50,7 +50,7 @@ RedisClientAddIn::RedisClientAddIn()
     AddMethod(L"MGET", L"MGET", this, &RedisClientAddIn::mget, {{1, ","}});
     AddMethod(L"SET", L"SET", this, &RedisClientAddIn::set, {{2, 0}});
     AddMethod(L"HGET", L"HGET", this, &RedisClientAddIn::hGet);
-    AddMethod(L"HSET", L"HSET", this, &RedisClientAddIn::hSet);
+    AddMethod(L"HSET", L"HSET", this, &RedisClientAddIn::hSet, {{3, 0}});
     AddMethod(L"DEL", L"DEL", this, &RedisClientAddIn::del);
     AddMethod(L"EXISTS", L"EXISTS", this, &RedisClientAddIn::exists);
     AddMethod(L"FLUSHALL", L"FLUSHALL", this, &RedisClientAddIn::flushAll);
@@ -104,7 +104,8 @@ variant_t RedisClientAddIn::get(const variant_t& a)
     return *value;
 }
 
-variant_t RedisClientAddIn::hSet(const variant_t& key, const variant_t& field, const variant_t& value)
+variant_t RedisClientAddIn::hSet(const variant_t& key, const variant_t& field, const variant_t& value,
+                                 const variant_t& ttl)
 {
     ensureConnected();
     auto updated_fields_count = redisInstance->hset(
@@ -112,6 +113,10 @@ variant_t RedisClientAddIn::hSet(const variant_t& key, const variant_t& field, c
         std::get<std::string>(field),
         std::get<std::string>(value)
     );
+    if (std::get<int32_t>(ttl) > 0)
+    {
+        redisInstance->expire(std::get<std::string>(key), std::get<int32_t>(ttl));
+    }
     return static_cast<int32_t>(updated_fields_count);
 }
 

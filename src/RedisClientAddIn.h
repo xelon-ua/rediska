@@ -44,7 +44,7 @@ private:
 
     variant_t set(const variant_t& key, const variant_t& val, const variant_t& ttm);
 
-    variant_t hSet(const variant_t& key, const variant_t& field, const variant_t& value);
+    variant_t hSet(const variant_t& key, const variant_t& field, const variant_t& value, const variant_t& ttl = 0);
 
     variant_t hGet(const variant_t& key, const variant_t& field);
 
